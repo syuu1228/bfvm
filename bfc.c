@@ -22,7 +22,7 @@ read_file(const char *file_name, long *size)
 		goto err;
 	if (0 > (s = ftell(fp)))
 		goto err;
-	if (!(buf = malloc(s)))
+	if (!(buf = calloc(s, sizeof(char))))
 		goto err;
 	if (fseek(fp, 0, SEEK_SET))
 		goto err;
@@ -41,6 +41,118 @@ err:
 	err(1, NULL);
 }
 
+
+static char *
+parse_ook(char *text, long size, long *nsize)
+{
+	int *ook_list;
+	char *parsed, *cp = text;
+	int i = 0, j, ook_list_size;
+
+	if (!(ook_list = (int *)calloc(size / 4, sizeof(int))))
+		return NULL;
+	while(cp + 4 < text + size) {
+		if (*cp == ' ' || *cp == '\n' || *cp == '\r' || *cp == '\t') {
+			++cp;
+		} else if(!strncmp("Ook", cp, 3)) {
+			cp += 3;
+			switch (*cp) {
+			case '.':
+				ook_list[i] = 1;
+				++i;
+				break;
+			case '?':
+				ook_list[i] = 2;
+				++i;
+				break;
+			case '!':
+				ook_list[i] = 3;
+				++i;
+				break;
+			default:
+				printf("Parse error\n");
+				free(ook_list);
+				return NULL;
+			}
+			++cp;
+		} else {
+			printf("Parse error\n");
+			free(ook_list);
+			return NULL;
+		}
+	}
+	ook_list_size = i;
+	if (!(parsed = (char *)calloc((size / 4) / 2, sizeof(char))))
+		return NULL;
+	for (i = 0, j = 0; i < ook_list_size; i += 2, j++) {
+		switch(ook_list[i]) {
+		case 1:
+			switch(ook_list[i + 1]) {
+			case 1:
+				parsed[j] = '+';
+				break;
+			case 2:
+				parsed[j] = '>';
+				break;
+			case 3:
+				parsed[j] = ',';
+				break;
+			default:
+				printf("Parse error\n");
+				free(ook_list);
+				free(parsed);
+				return NULL;
+			}
+			break;
+		case 2:
+			switch(ook_list[i + 1]) {
+			case 1:
+				parsed[j] = '<';
+				break;
+			case 2:
+				printf("Ook? Ook? is not defined function\n");
+				free(ook_list);
+				free(parsed);
+				return NULL;
+			case 3:
+				parsed[j] = ']';
+				break;
+			default:
+				printf("Parse error\n");
+				free(ook_list);
+				free(parsed);
+				return NULL;
+			}
+			break;
+		case 3:
+			switch(ook_list[i + 1]) {
+			case 1:
+				parsed[j] = '.';
+				break;
+			case 2:
+				parsed[j] = '[';
+				break;
+			case 3:
+				parsed[j] = '-';
+				break;
+			default:
+				printf("Parse error\n");
+				free(ook_list);
+				free(parsed);
+				return NULL;
+			}
+			break;
+		default:
+			printf("Parse error\n");
+			free(ook_list);
+			free(parsed);
+			return NULL;
+		}
+	}
+	*nsize = j;
+	return parsed;
+}
+
 static uint16_t *
 compile(char *text, long size, long *nsize)
 {
@@ -49,7 +161,7 @@ compile(char *text, long size, long *nsize)
 	uint16_t *bytecode;
 
 	DPRINTF("size:%lu\n", size);
-	if (!(bytecode = (uint16_t *)malloc(size * sizeof(uint16_t))))
+	if (!(bytecode = (uint16_t *)calloc(size, sizeof(uint16_t))))
 		return NULL;
 	for (i = 0; i < size; i++) {
 		DPRINTF("%d ", j);
@@ -150,21 +262,26 @@ err:
 int 
 main(int argc, char **argv)
 {
-	char *text;
+	char *text, *parsed;
 	long size;
 	uint16_t *bytecode;
 
-	if (argc < 3) {
-		fprintf(stderr, "%s sourcecode bytecode\n", argv[0]);
+	if (argc < 4) {
+		fprintf(stderr, "%s [brainfuck|ook] sourcecode bytecode\n", argv[0]);
 		return 1;
 	}
-	if (!(text = read_file(argv[1], &size)))
+	if (!(text = read_file(argv[2], &size)))
 		return 1;
-	if (!(bytecode = compile(text, size, &size))) {
+	if (!strcmp("brainfuck", argv[1])) {
+		parsed = text;
+	}else if (!strcmp("ook", argv[1])) {
+		parsed = parse_ook(text, size, &size);
+	}
+	if (!(bytecode = compile(parsed, size, &size))) {
 		free(text);
 		return 1;
 	}
-	size = write_file(argv[2], bytecode, size);
+	size = write_file(argv[3], bytecode, size);
 	free(text);
 	free(bytecode);
 	if (size < 0)
