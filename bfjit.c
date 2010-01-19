@@ -70,11 +70,11 @@ interpret(uint16_t *bytecode, long size)
 	if(mprotect((void*)program, psize, PROT_READ | PROT_WRITE | PROT_EXEC))
 		err(1, "mprotect");
 
-    program[j++] = 0x55;// push   %ebp	
-    program[j++] = 0x89; program[j++] = 0xe5;// mov    %esp,%ebp
-    program[j++] = 0x83; program[j++] = 0xec; program[j++] = 0x18;// sub    $0x18,%esp
-    program[j++] = 0x8b; program[j++] = 0x5d; program[j++] = 0x08;// mov    0x8(%ebp),%ebx
-    program[j++] = 0x8b; program[j++] = 0x75; program[j++] = 0x0c;// mov    0xc(%ebp),%esi
+	program[j++] = 0x55;// push   %ebp
+	program[j++] = 0x89; program[j++] = 0xe5;// mov    %esp,%ebp
+	program[j++] = 0x83; program[j++] = 0xec; program[j++] = 0x18;// sub    $0x18,%esp
+	program[j++] = 0x8b; program[j++] = 0x5d; program[j++] = 0x08;// mov    0x8(%ebp),%ebx
+	program[j++] = 0x8b; program[j++] = 0x75; program[j++] = 0x0c;// mov    0xc(%ebp),%esi
 	start_address = j;
 	
 	DPRINTF("size:%lu\n", size);
