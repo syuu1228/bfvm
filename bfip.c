@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 	long size;
 	uint16_t *bytecode;
 
-	if (argc < 1) {
+	if (argc < 2) {
 		fprintf(stderr, "%s bytecode\n", argv[0]);
 		return 1;
 	}
