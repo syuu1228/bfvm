@@ -84,59 +84,43 @@ interpret(uint16_t *bytecode, long size)
 			DPRINTF("i >= size\n");
 			break;
 		}
-//		DPRINTF("%d:", i);
+		address_list[i] = j;
 		switch(byte & 0xff00) {
 		case BF_PINC:
-			address_list[i] = j;
 			program[j++] = 0x43; // inc    %ebx
-			i++;
 			break;
 		case BF_PDEC:
-			address_list[i] = j;
 			program[j++] = 0x4b; // dec    %ebx
-			i++;
 			break;
 		case BF_VINC:
-			address_list[i] = j;
 			program[j++] = 0xff; program[j++] = 0x03;// incl    (%ebx)
-			i++;
 			break;
 		case BF_VDEC:
-			address_list[i] = j;
 			program[j++] = 0xff; program[j++] = 0x0b;// decl    (%ebx)
-			i++;
 			break;
 		case BF_PUTC:
-			address_list[i] = j;
 			program[j++] = 0x8b; program[j++] = 0x03; // mov    (%ebx),%eax
 			program[j++] = 0x89; program[j++] = 0x04; program[j++] = 0x24;// mov    %eax,(%esp)
 			program[j++] = 0xff; program[j++] = 0x16; // call *(%esi)
-			i++;
 			break;
 		case BF_GETC:
-			address_list[i] = j;
 			program[j++] = 0x89; program[j++] = 0xf0; // mov    %esi,%eax
 			program[j++] = 0xff; program[j++] = 0x50; program[j++] = 0x04; // call   *0x4(%eax)
 			program[j++] = 0x89; program[j++] = 0x03; // mov    %eax,(%ebx)
-			i++;
 			break;
 		case BF_BEQZ:
-			address_list[i] = j;
 			program[j++] = 0x83; program[j++] = 0x3b; program[j++] = 0x00; // cmpl   $0x0,(%ebx)
 			program[j++] = 0x74; program[j++] = 0x00; // je    0
-			i++;
 			break;
 		case BF_BNEZ:
-			address_list[i] = j;
 			program[j++] = 0x83; program[j++] = 0x3b; program[j++] = 0x00; // cmpl   $0x0,(%ebx)
 			program[j++] = 0x75; program[j++] = 0x00; // jne    0
-			i++;
 			break;
 		default:
 			printf("unknown operation:%x\n", byte);
 			return;
 		}
-//		DPRINTF("\n");
+		i++;
 	}
 	program[j++] = 0xc9;// leave  
 	program[j++] = 0xc3;// ret
@@ -149,23 +133,13 @@ interpret(uint16_t *bytecode, long size)
 			DPRINTF("i >= size\n");
 			break;
 		}
-//		DPRINTF("%d:", i);
 		switch(byte & 0xff00) {
-		case BF_PINC:
-		case BF_PDEC:
-		case BF_VINC:
-		case BF_VDEC:
-		case BF_PUTC:
-		case BF_GETC:
-			i++;
-			break;
 		case BF_BEQZ: {
 			uint8_t skip = 0x00ff & byte;
 			j = address_list[i];
 			j++; j++; j++; // cmpl   $0x0,(%ebx)
 			j++; program[j++] = address_list[i+skip] - j; // je
 			DPRINTF("je %d\n", address_list[i+skip] - j);
-			i++;
 			break;
 		}
 		case BF_BNEZ: {
@@ -174,14 +148,12 @@ interpret(uint16_t *bytecode, long size)
 			j++; j++; j++; // cmpl   $0x0,(%ebx)
 			j++; program[j++] = 0xff - (j - address_list[i-skip]); // jne
 			DPRINTF("jne %d\n", 0xff - (j - address_list[i-skip]));
-			i++;
 			break;
 		}
 		default:
-			printf("unknown operation:%x\n", byte);
-			return;
+			break;
 		}
-//		DPRINTF("\n");
+		i++;
 	}
 
 	memset(stack, 0, 32768);
