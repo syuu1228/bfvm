@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <sys/mman.h>
-#include <assert.h>
 #include "bfvm.h"
 
 #ifdef DEBUG
@@ -164,7 +163,6 @@ interpret(uint16_t *bytecode, long size)
 			uint8_t skip = 0x00ff & byte;
 			j = address_list[i];
 			j++; j++; j++; // cmpl   $0x0,(%ebx)
-			assert(program[j] == 0x74);
 			j++; program[j++] = address_list[i+skip] - j; // je
 			DPRINTF("je %d\n", address_list[i+skip] - j);
 			i++;
@@ -174,7 +172,6 @@ interpret(uint16_t *bytecode, long size)
 			uint8_t skip = 0x00ff & byte;
 			j = address_list[i];
 			j++; j++; j++; // cmpl   $0x0,(%ebx)
-			assert(program[j] == 0x75);
 			j++; program[j++] = 0xff - (j - address_list[i-skip]); // jne
 			DPRINTF("jne %d\n", 0xff - (j - address_list[i-skip]));
 			i++;
