@@ -150,6 +150,7 @@ parse_ook(char *text, long size, long *nsize)
 		}
 	}
 	*nsize = j;
+	free(ook_list);
 	return parsed;
 }
 
@@ -267,22 +268,30 @@ main(int argc, char **argv)
 	uint16_t *bytecode;
 
 	if (argc < 4) {
-		fprintf(stderr, "%s [brainfuck|ook] sourcecode bytecode\n", argv[0]);
+		fprintf(stderr, "%s [brainfuck|ook|mona] sourcecode bytecode\n", argv[0]);
 		return 1;
 	}
 	if (!(text = read_file(argv[2], &size)))
 		return 1;
 	if (!strcmp("brainfuck", argv[1])) {
 		parsed = text;
-	}else if (!strcmp("ook", argv[1])) {
+	} else if (!strcmp("ook", argv[1])) {
 		parsed = parse_ook(text, size, &size);
-	}
-	if (!(bytecode = compile(parsed, size, &size))) {
+		free(text);
+	} else if (!strcmp("mona", argv[1])) {
+	    convert_mona(text, size);
+		parsed = text;
+	} else {
+		printf("unsupported language: %s\n", argv[1]);
 		free(text);
 		return 1;
 	}
+	if (!(bytecode = compile(parsed, size, &size))) {
+		free(parsed);
+		return 1;
+	}
 	size = write_file(argv[3], bytecode, size);
-	free(text);
+	free(parsed);
 	free(bytecode);
 	if (size < 0)
 		return 1;
